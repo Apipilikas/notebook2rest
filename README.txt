@@ -8,5 +8,4 @@ sequenceDiagram
     Notebook2REST->>Workflow: Generate FastAPI, build image
     Workflow->>ECR:Push new image
     Workflow->>AWS Cluster: redeploy helm chart with new image
-
 ```
