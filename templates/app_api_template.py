@@ -1,37 +1,46 @@
 from pathlib import Path
-
-from fastapi import FastAPI, HTTPException
+import json
+import uvicorn
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from notebook_converter import NotebookConverter
 
 NOTEBOOKS_PATH = Path("notebooks")
+CONVERTER = NotebookConverter()
 
 app = FastAPI(
-    title="{{ title }} - Notebook2Rest API",
+    title="Notebook2Rest API",
     description="A notebook2rest API"
 )
 
 @app.get("/api/notebooks")
 def get_notebooks():
-    return {"notebooks": []}
+    with open("file_mapping.json", 'r') as file:
+        data = json.load(file)
+    return {"notebooks": list(data.keys())}
 
-class ExportParams(BaseModel):
-    type: str
-    params: dict[str, object]
+@app.get("/api/notebooks/{notebook_name}/export")
+def get_results(notebook_name, request: Request):
 
-@app.post("/api/notebooks/{notebook_name}/export")
-def get_results(notebook_name, params: ExportParams):
-
-    file_path = find_file_path(notebook_name)
+    file_path = NOTEBOOKS_PATH.joinpath(f'{notebook_name}.ipynb')
 
     if file_path is None:
         raise HTTPException(status_code=404, detail="Notebook file cannot be found.")
 
-    match params.type:
-        case "json":
-            result = export_notebook_to_json()
-            return {"results": result}
-        case "ipynb":
-            result = export_notebook_to_ipynb()
-            return {"results": result}
-        case _:
-            raise HTTPException(status_code=404, detail="Exported type is not supported.")
+    accept_header = request.headers.get("Accept", "")
+
+    if "application/x-ipynb+json" in accept_header:
+        out_path = CONVERTER.convert_notebook_to_ipynb(file_path, None)
+
+        return FileResponse(
+            path=out_path,
+            filename=out_path.name,
+            media_type="application/x-ipynb+json"
+        )
+    else:
+        result = CONVERTER.convert_notebook_to_json(file_path, None)
+        return {"results": result}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
