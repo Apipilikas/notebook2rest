@@ -9,11 +9,14 @@ from file_mapper import generate_file_mapping
 OUTPUT_PATH = Path("build")
 NOTEBOOKS_PATH = OUTPUT_PATH.joinpath("notebooks")
 TEMPLATES_PATH = Path("templates")
+FILE_MAPPING_NAME = "file_mapping.json"
 
 def main():
     source_path = resolve_source_path()
 
-    print(f"Creating build path: {OUTPUT_PATH} . . .")
+    print("================ Build process started ================")
+
+    print(f"Creating build path . . .")
     OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
 
     print("Creating notebooks path . . .")
@@ -28,13 +31,15 @@ def main():
     print("Copying template files to build path . . .")
     copy_template_files(OUTPUT_PATH)
 
+    print("================ Build process completed ================")
+
 def generate_and_save_file_mapping(source_path: Path) -> dict:
     file_mapping = generate_file_mapping(source_path)
-    file_mapping_path = OUTPUT_PATH.joinpath("file_mapping.json")
+    file_mapping_path = OUTPUT_PATH.joinpath(FILE_MAPPING_NAME)
     with open(file_mapping_path, "w") as file:
         json.dump(file_mapping, file, indent=4)
 
-    return  file_mapping
+    return file_mapping
 
 def copy_notebooks(file_mapping: dict, destination_path: Path):
     for normalized_name, original_info in file_mapping.items():
@@ -54,7 +59,8 @@ def copy_template_files(destination_path: Path):
     template_files = {
         "Dockerfile": "Dockerfile",
         "requirements.txt": "requirements.txt",
-        "app_api_template.py": "app.py"
+        "app_api_template.py": "main.py",
+        "notebook_converter.py": "notebook_converter.py"
     }
 
     for source_name, target_name in template_files.items():
@@ -66,13 +72,17 @@ def resolve_source_path() -> Path:
     argv = sys.argv[1:]
 
     try:
-        opts, args = getopt.getopt(argv, "s:", ["source_path="])
+        opts, args = getopt.getopt(argv, "s:", ["source-path="])
     except:
-        print("Error")
+        print("Error parsing the arguments")
+        sys.exit(1)
 
     for opt, arg in opts:
         if opt in ('-s', '--source-path'):
             source_path = arg
+
+    if not opts and args:
+        source_path = args[0]
 
     path = Path(source_path)
 
