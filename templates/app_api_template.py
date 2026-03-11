@@ -9,19 +9,27 @@ from notebook_converter import NotebookConverter
 NOTEBOOKS_PATH = Path("notebooks")
 CONVERTER = NotebookConverter()
 
+description = """
+Notebook2Rest
+
+Modify it, Execute it, Export it.
+"""
+
 app = FastAPI(
     title="Notebook2Rest API",
-    description="A notebook2rest API"
+    description=description,
+    summary="An app to convert Notebook to REST API",
+    version="0.0.1"
 )
 
-@app.get("/api/notebooks")
+@app.get("/api/notebooks", summary="Gets all available notebooks")
 def get_notebooks():
     with open("file_mapping.json", 'r') as file:
         data = json.load(file)
     return {"notebooks": list(data.keys())}
 
-@app.get("/api/notebooks/{notebook_name}/export")
-def get_results(notebook_name, request: Request):
+@app.get("/api/notebooks/{notebook_name}/export", summary="Exports a notebook")
+def get_results(notebook_name: str, request: Request):
 
     file_path = NOTEBOOKS_PATH.joinpath(f'{notebook_name}.ipynb')
 

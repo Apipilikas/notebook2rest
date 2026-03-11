@@ -86,7 +86,6 @@ def resolve_source_path() -> Path:
 
     path = Path(source_path)
 
-    # Check if the directory actually exists
     if not path.exists() or not path.is_dir():
         print(f"Error: Directory '{path}' not found.")
         sys.exit(1)
