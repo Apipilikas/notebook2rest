@@ -8,6 +8,7 @@ from pathlib import Path
 
 from nbconvert.preprocessors import ExecutePreprocessor, Preprocessor
 import nbformat
+import json
 
 class NotebookConverter(Preprocessor):
     def __init__(self, **kwargs):
@@ -22,10 +23,10 @@ class NotebookConverter(Preprocessor):
 
         return  executed_np
 
-    def convert_notebook_to_json(self, file_path: Path, user_arg) -> str:
+    def convert_notebook_to_json(self, file_path: Path, user_arg):
         executed_np = self.execute(file_path)
-
-        return nbformat.writes(executed_np, version=4)
+        executed_np_str = nbformat.writes(executed_np, version=4)
+        return json.loads(executed_np_str)
 
     def convert_notebook_to_ipynb(self, file_path: Path, user_arg) -> Path:
         executed_np = self.execute(file_path)
