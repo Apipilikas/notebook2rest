@@ -3,6 +3,15 @@ LABEL authors="notebook2rest team"
 
 WORKDIR /app
 
+# Build metadata
+ARG GIT_SHA
+ARG BUILD_NUMBER
+ARG BUILD_DATE
+
+ENV APP_VERSION=$GIT_SHA
+ENV BUILD_NUMBER=$BUILD_NUMBER
+ENV BUILD_DATE=$BUILD_DATE
+
 # Install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
