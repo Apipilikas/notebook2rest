@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from notebook_converter import NotebookConverter
+import os
 
 NOTEBOOKS_PATH = Path("notebooks")
 CONVERTER = NotebookConverter()
@@ -55,6 +56,14 @@ def get_results(notebook_name: str, request: Request):
             f"An error occured while exporting the [{notebook_name}] notebook.",
             str(e)
         )
+
+@app.get("/api/version")
+def version():
+    return {
+        "version": os.getenv("APP_VERSION"),
+        "build": os.getenv("BUILD_NUMBER"),
+        "date": os.getenv("BUILD_DATE")
+    }
 
 class APIException(HTTPException):
     def __init__(self, message: str, details: str, status_code: int = 500):
