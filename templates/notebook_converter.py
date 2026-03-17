@@ -8,6 +8,7 @@ from pathlib import Path
 
 import nbclient
 from nbconvert.preprocessors import ExecutePreprocessor, Preprocessor
+from nbconvert import HTMLExporter
 import nbformat
 import json
 
@@ -16,6 +17,7 @@ class NotebookConverter(Preprocessor):
         super().__init__(**kwargs)
 
         self.preprocessor = ExecutePreprocessor(timeout=600, kernel_name="python3")
+        self.html_exporter = HTMLExporter()
 
     def get_executed_file_path(self, file_path: Path):
         executed_file_name = f"{file_path.stem}-executed{file_path.suffix}"
@@ -34,7 +36,7 @@ class NotebookConverter(Preprocessor):
         out_path = self.get_executed_file_path(file_path)
 
         if out_path.is_file():
-            executed_np = self.read_notebook(file_path)
+            executed_np = self.read_notebook(out_path)
         else:
             notebook_content = self.read_notebook(file_path)
             executed_np, out_resources = self.preprocessor.preprocess(notebook_content)
@@ -64,6 +66,11 @@ class NotebookConverter(Preprocessor):
         executed_np = self.execute(file_path)[0]
         executed_np_str = nbformat.writes(executed_np, version=4)
         return json.loads(executed_np_str)
+    
+    def convert_notebook_to_html(self, file_path: Path):
+        executed_np = self.execute(file_path)[0]
+        (body, resources) = self.html_exporter.from_notebook_node(executed_np)
+        return body
 
     def convert_notebook_to_ipynb(self, file_path: Path) -> Path:
         return self.execute(file_path)[1]

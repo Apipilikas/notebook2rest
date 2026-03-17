@@ -2,9 +2,10 @@ from pathlib import Path
 import json
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
 from pydantic import BaseModel
 from notebook_converter import NotebookConverter
+from typing import Literal
 import os
 
 NOTEBOOKS_PATH = Path("notebooks")
@@ -37,22 +38,36 @@ def get_notebook_file_path(notebook_name: str):
 
     return file_path
 
-@app.get("/api/notebooks/{notebook_name}/execute", summary="Executes a notebook",
-         responses={
-             200: {
-                 "content": {
-                     "application/x-ipynb+json": {},
-                     "application/test": {}
-                 }
-             }}
-         )
-def get_results(notebook_name: str, request: Request):
+@app.get(
+    "/api/notebooks/{notebook_name}/execute",
+    summary="Executes a notebook",
+    description="""
+        Executes the notebook (if not already executed) and returns the result.
+
+        Formats available:
+
+        - JSON: `/api/notebooks/{notebook_name}/execute`
+        - HTML report: `/api/notebooks/{notebook_name}/execute?format=html`
+        - Download notebook: `/api/notebooks/{notebook_name}/execute?format=ipynb`
+        """,
+    responses={
+        200: {
+            "content": {
+                "application/json": {},
+                "text/html": {},
+                "application/x-ipynb+json": {}
+            }
+        }
+    }
+)
+def get_results(
+        notebook_name: str, 
+        format: Literal["json", "ipynb", "html"] = "json"
+        ):
     file_path = get_notebook_file_path(notebook_name)
 
-    accept_header = request.headers.get("Accept", "")
-
     try:
-        if "application/x-ipynb+json" in accept_header:
+        if format == "ipynb":
             out_path = CONVERTER.convert_notebook_to_ipynb(file_path)
 
             return FileResponse(
@@ -60,9 +75,25 @@ def get_results(notebook_name: str, request: Request):
                 filename=out_path.name,
                 media_type="application/x-ipynb+json"
             )
+        elif format == "html":
+            html_content = CONVERTER.convert_notebook_to_html(file_path)
+            return HTMLResponse(
+                content=html_content,
+                media_type="text/html"
+            )
+
+            # return HTMLResponse(
+            #     content=html_content,
+            #     headers={
+            #         "Content-Disposition": "inline; filename=notebook.html"
+            #     }
+            # )
         else:
             result = CONVERTER.convert_notebook_to_json(file_path)
-            return JSONResponse(content=result)
+            return JSONResponse(
+                content=result,
+                media_type="application/json"
+            )
     except Exception as e:
         raise APIException(
             f"An error occured while executing the [{notebook_name}] notebook.",
