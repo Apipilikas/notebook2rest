@@ -52,7 +52,7 @@ securityContext: {}
 # This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
 service:
   type: LoadBalancer
-  port: 8000 # <- The port that the service exposes
+  port: 80 # <- The port that the service exposes
   targetPort: 8000 # <- The port that the pods of the service each expose (in our case, we have to expose 8000)
 
 # This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
